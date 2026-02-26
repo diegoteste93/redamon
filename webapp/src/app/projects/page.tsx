@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, FolderOpen, Users, RefreshCw, Trash2, Upload } from 'lucide-react'
 import Link from 'next/link'
 import { useProjects, useDeleteProject } from '@/hooks/useProjects'
-import { useUsers, useCreateUser, useDeleteUser } from '@/hooks/useUsers'
+import { useUsers, useCreateUser, useDeleteUser, type Role } from '@/hooks/useUsers'
 import { useProject } from '@/providers/ProjectProvider'
 import { ProjectCard } from '@/components/projects/ProjectCard'
 import { ImportModal } from './ImportModal'
@@ -18,6 +18,8 @@ export default function ProjectsPage() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [newUserName, setNewUserName] = useState('')
   const [newUserEmail, setNewUserEmail] = useState('')
+  const [newUserPassword, setNewUserPassword] = useState('')
+  const [newUserRole, setNewUserRole] = useState<Role>('PENTESTER')
 
   const { data: users, isLoading: usersLoading } = useUsers()
   const { data: projects, isLoading: projectsLoading, refetch } = useProjects(userId || undefined)
@@ -60,12 +62,16 @@ export default function ProjectsPage() {
     try {
       const user = await createUserMutation.mutateAsync({
         name: newUserName,
-        email: newUserEmail
+        email: newUserEmail,
+        password: newUserPassword,
+        role: newUserRole
       })
       setUserId(user.id)
       setShowUserModal(false)
       setNewUserName('')
       setNewUserEmail('')
+      setNewUserPassword('')
+      setNewUserRole('PENTESTER')
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to create user')
     }
@@ -237,6 +243,27 @@ export default function ProjectsPage() {
                   placeholder="Enter email address"
                   required
                 />
+              </div>
+              <div className="formGroup">
+                <label className="formLabel formLabelRequired">Password</label>
+                <input
+                  type="password"
+                  className="textInput"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  placeholder="Temporary password"
+                  minLength={12}
+                  required
+                />
+              </div>
+              <div className="formGroup">
+                <label className="formLabel formLabelRequired">Role</label>
+                <select className="select" value={newUserRole} onChange={(e) => setNewUserRole(e.target.value as Role)}>
+                  <option value="ADMIN">Administrador</option>
+                  <option value="PENTESTER">Pentester</option>
+                  <option value="REDTEAM_OPERATOR">Operador Red Team</option>
+                  <option value="CLIENT_READONLY">Cliente (read-only)</option>
+                </select>
               </div>
               <div className={styles.modalActions}>
                 <button

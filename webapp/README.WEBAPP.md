@@ -82,11 +82,16 @@ npm install
 cp .env.example .env.local
 # Edit .env.local with your Neo4j password
 
-# 4. Run development server (with hot reload)
+# 4. Apply Prisma migrations (IAM + sessions)
+npx prisma migrate deploy
+
+# 5. Run development server (with hot reload)
 npm run dev
 
-# 5. Access the application
+# 6. Access the application
 # Web App: http://localhost:3000
+# Login: http://localhost:3000/login
+
 ```
 
 The development server uses Turbopack for fast refresh - changes to your code are reflected instantly.
@@ -324,6 +329,28 @@ Content-Type: application/json
 }
 ```
 
+### IAM / Authentication API
+
+- `POST /api/auth/login` — Email/senha + MFA opcional. Retorna cookie de sessão `HttpOnly`.
+- `POST /api/auth/logout` — Revoga sessão ativa.
+- `GET /api/auth/me` — Retorna usuário autenticado.
+- `POST /api/auth/mfa/setup` — Gera segredo TOTP/otpauth para habilitar MFA.
+- `POST /api/auth/mfa/verify` — Ativa/desativa MFA após validação do código.
+- `POST /api/auth/password-reset` — Admin redefine senha (gera senha temporária).
+- `POST /api/oauth/token` — Endpoint OAuth2-like (Bearer) para integração IAM.
+
+**Papéis suportados:** `ADMIN`, `PENTESTER`, `REDTEAM_OPERATOR`, `CLIENT_READONLY`.
+
+**Segregação de visualização:**
+- `ADMIN`: acesso completo.
+- `PENTESTER` / `REDTEAM_OPERATOR`: dashboards operacionais (graph/projects/reports).
+- `CLIENT_READONLY`: apenas `/reports` e APIs de relatório/autenticação.
+
+### Relatórios PDF
+
+- `GET /api/reports/summary?projectId=<id>` — Agrega vulnerabilidades por severidade.
+- `POST /api/reports/pdf` — Gera relatório PDF com resumo de severidade.
+
 ### Recon Control API
 
 The webapp provides endpoints to control reconnaissance scans via the Recon Orchestrator.
@@ -481,6 +508,7 @@ npm run build            # Build for production
 npm run start            # Start production server
 npm run lint             # Run ESLint
 npm run type-check       # Run TypeScript check
+npm run test             # Unit tests (auth + MFA primitives)
 
 # Docker Production
 docker compose up -d --build                           # Start prod
