@@ -2,10 +2,15 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
+export type Role = 'ADMIN' | 'PENTESTER' | 'REDTEAM_OPERATOR' | 'CLIENT_READONLY'
+
 export interface User {
   id: string
   name: string
   email: string
+  role: Role
+  isActive: boolean
+  mfaEnabled: boolean
   createdAt: string
   updatedAt: string
   _count?: {
@@ -23,7 +28,6 @@ export interface UserWithProjects extends User {
   }[]
 }
 
-// Fetch all users
 async function fetchUsers(): Promise<User[]> {
   const response = await fetch('/api/users')
   if (!response.ok) {
@@ -32,7 +36,6 @@ async function fetchUsers(): Promise<User[]> {
   return response.json()
 }
 
-// Fetch a single user by ID
 async function fetchUser(userId: string): Promise<UserWithProjects> {
   const response = await fetch(`/api/users/${userId}`)
   if (!response.ok) {
@@ -41,8 +44,7 @@ async function fetchUser(userId: string): Promise<UserWithProjects> {
   return response.json()
 }
 
-// Create a new user
-async function createUser(data: { name: string; email: string }): Promise<User> {
+async function createUser(data: { name: string; email: string; role: Role; password: string }): Promise<User> {
   const response = await fetch('/api/users', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -55,8 +57,7 @@ async function createUser(data: { name: string; email: string }): Promise<User> 
   return response.json()
 }
 
-// Update a user
-async function updateUser(userId: string, data: Partial<{ name: string; email: string }>): Promise<User> {
+async function updateUser(userId: string, data: Partial<{ name: string; email: string; role: Role; isActive: boolean }>): Promise<User> {
   const response = await fetch(`/api/users/${userId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -69,7 +70,6 @@ async function updateUser(userId: string, data: Partial<{ name: string; email: s
   return response.json()
 }
 
-// Delete a user
 async function deleteUser(userId: string): Promise<void> {
   const response = await fetch(`/api/users/${userId}`, {
     method: 'DELETE'
@@ -80,7 +80,6 @@ async function deleteUser(userId: string): Promise<void> {
   }
 }
 
-// Hook to fetch all users
 export function useUsers() {
   return useQuery({
     queryKey: ['users'],
@@ -88,7 +87,6 @@ export function useUsers() {
   })
 }
 
-// Hook to fetch a single user
 export function useUserById(userId: string | null) {
   return useQuery({
     queryKey: ['user', userId],
@@ -97,7 +95,6 @@ export function useUserById(userId: string | null) {
   })
 }
 
-// Hook for creating a user
 export function useCreateUser() {
   const queryClient = useQueryClient()
 
@@ -109,12 +106,11 @@ export function useCreateUser() {
   })
 }
 
-// Hook for updating a user
 export function useUpdateUser() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ userId, data }: { userId: string; data: Partial<{ name: string; email: string }> }) =>
+    mutationFn: ({ userId, data }: { userId: string; data: Partial<{ name: string; email: string; role: Role; isActive: boolean }> }) =>
       updateUser(userId, data),
     onSuccess: (user) => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
@@ -123,7 +119,6 @@ export function useUpdateUser() {
   })
 }
 
-// Hook for deleting a user
 export function useDeleteUser() {
   const queryClient = useQueryClient()
 
